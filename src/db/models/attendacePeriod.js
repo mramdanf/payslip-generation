@@ -64,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
       field: 'updated_by'
     }
   }, {
-    tableName: 'attendance_periods',
+    tableName: 'attendance_period',
     timestamps: true,
     underscored: true,
     hooks: {

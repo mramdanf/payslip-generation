@@ -6,7 +6,7 @@ const rateLimit = require('express-rate-limit');
 const db = require('./db');
 
 const userRouter = require('./routes/userRoutes');
-
+const attendancePeriodRouter = require('./routes/attendancePeriodRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -28,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/users', userRouter);
+app.use('/attendance-periods', attendancePeriodRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
