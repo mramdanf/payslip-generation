@@ -64,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
       field: 'updated_by'
     }
   }, {
-    tableName: 'users',
+    tableName: 'user',
     timestamps: true,
     underscored: true,
     hooks: {

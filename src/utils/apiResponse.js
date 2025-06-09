@@ -21,12 +21,11 @@ function endpointResponse(response) {
 }
 
 function endpointErrorResponse(message, code) {
-  return endpointResponse({ error: true, errorMessage: message, code });
+  return endpointResponse({ errorMessage: message, code });
 }
 
 function endpointSuccessResponse({ message, code, ...rest }) {
   return endpointResponse({
-    error: false,
     message,
     code,
     ...rest

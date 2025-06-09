@@ -18,7 +18,7 @@ async function login(req, res) {
 
     const validPassword = await bcryptCompare(
       userPayload.password,
-      user.password
+      user.passwordHash
     );
 
     if (!validPassword) {
@@ -27,7 +27,7 @@ async function login(req, res) {
     }
 
     const token = jwt.sign(
-      { _id: user._id },
+      { id: user.id },
       `${process.env.JWT_SECRET}`,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
