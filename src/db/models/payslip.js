@@ -73,10 +73,61 @@ module.exports = (sequelize, DataTypes) => {
         min: 0
       }
     },
+    overtimePay: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      field: 'overtime_pay',
+      validate: {
+        min: 0
+      }
+    },
+    totalOvertimeHours: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: false,
+      defaultValue: 0,
+      field: 'total_overtime_hours',
+      validate: {
+        min: 0
+      }
+    },
+    totalReimbursements: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      field: 'total_reimbursements',
+      validate: {
+        min: 0
+      }
+    },
+    totalTakeHome: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      field: 'total_take_home',
+      validate: {
+        min: 0
+      }
+    },
+    attendanceBreakdown: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      field: 'attendance_breakdown'
+    },
+    overtimeBreakdown: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      field: 'overtime_breakdown'
+    },
+    reimbursementBreakdown: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      field: 'reimbursement_breakdown'
+    },
     status: {
       type: DataTypes.ENUM('draft', 'generated', 'sent'),
       allowNull: false,
-      defaultValue: 'draft',
+      defaultValue: 'generated',
       validate: {
         isIn: [['draft', 'generated', 'sent']]
       }
@@ -114,12 +165,22 @@ module.exports = (sequelize, DataTypes) => {
     ],
     hooks: {
       beforeSave: (payslip) => {
-        // Calculate gross salary based on days worked
-        const dailySalary = payslip.basicSalary / payslip.totalWorkingDays;
-        payslip.grossSalary = dailySalary * payslip.daysWorked;
+        // Only recalculate if values are missing (for backward compatibility)
+        if (!payslip.grossSalary && payslip.basicSalary && payslip.totalWorkingDays) {
+          const dailySalary = parseFloat(payslip.basicSalary) / parseInt(payslip.totalWorkingDays);
+          payslip.grossSalary = dailySalary * parseFloat(payslip.daysWorked || 0);
+        }
         
-        // Calculate net salary
-        payslip.netSalary = payslip.grossSalary - payslip.deductions;
+        if (!payslip.netSalary && payslip.grossSalary !== undefined) {
+          payslip.netSalary = parseFloat(payslip.grossSalary) - parseFloat(payslip.deductions || 0);
+        }
+        
+        if (!payslip.totalTakeHome && payslip.grossSalary !== undefined) {
+          payslip.totalTakeHome = parseFloat(payslip.grossSalary) + 
+            parseFloat(payslip.overtimePay || 0) + 
+            parseFloat(payslip.totalReimbursements || 0) - 
+            parseFloat(payslip.deductions || 0);
+        }
       },
       beforeUpdate: (payslip) => {
         // Set generated timestamp when status changes to generated

@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
       field: 'updated_by'
     }
   }, {
-    tableName: 'payrolls',
+    tableName: 'payroll',
     timestamps: true,
     underscored: true,
     hooks: {
@@ -86,16 +86,13 @@ module.exports = (sequelize, DataTypes) => {
       as: 'updater'
     });
 
-    // Payslip associations
-    Payroll.hasMany(models.Payslip, {
-      foreignKey: 'payrollId',
-      as: 'payslips'
-    });
+    // Note: Payslips are linked through attendance period, not directly to payroll
   };
 
   // Instance methods
   Payroll.prototype.getPayrollSummary = async function() {
-    const payslips = await this.getPayslips({
+    const payslips = await sequelize.models.Payslip.findAll({
+      where: { attendancePeriodId: this.attendancePeriodId },
       include: [{
         model: sequelize.models.User,
         as: 'employee',
