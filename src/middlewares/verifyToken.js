@@ -23,8 +23,6 @@ async function verifyToken(req, res, next) {
     );
     req.id = decoded.id;
 
-    console.log('id', req.id);
-
     const user = await findById(req.id);
     if (!user) {
       return res.status(401).json(endpointErrorResponse('Invalid token'));
