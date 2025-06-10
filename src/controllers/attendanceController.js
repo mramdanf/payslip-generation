@@ -1,4 +1,5 @@
 const attendanceService = require('../services/attendanceService');
+const attendancePeriodService = require('../services/attendancePeriodService');
 const {
   endpointSuccessResponse,
   endpointErrorResponse
@@ -8,6 +9,15 @@ async function createAttendance(req, res) {
   try {
     const userId = req.id;
     const { attendancePeriodId, date, checkIn, checkOut } = req.body;
+    
+    // Check if attendance period exists
+    const attendancePeriod = await attendancePeriodService.findAttendancePeriodById(attendancePeriodId);
+    if (!attendancePeriod) {
+      return res.status(400).json(
+        endpointErrorResponse('Attendance period not found.')
+      );
+    }
+    
     const attendance = await attendanceService.createAttendance({
       employeeId: userId,
       attendancePeriodId,
