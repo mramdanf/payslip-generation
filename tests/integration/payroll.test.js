@@ -40,7 +40,7 @@ describe('Payroll Endpoints', () => {
       name: 'Payroll Employee',
       role: 'employee',
       isActive: true,
-      baseSalary: 5000000,
+      monthlySalary: 5000000,
     };
     
     employeeUser = await TestHelpers.createTestUser(employeeUserData);
@@ -173,6 +173,179 @@ describe('Payroll Endpoints', () => {
       // Assert
       expect(response.status).toBe(409);
       expect(response.body.error).toContain('already been processed');
+    });
+  });
+
+  describe('GET /payrolls/payslip/:periodId', () => {
+    let employeeToken;
+    let payrollProcessed = false;
+
+    beforeEach(async () => {
+      // Get employee token for payslip access
+      const employeeLoginResponse = await request(app)
+        .post('/users/login')
+        .send({
+          username: 'payrollemployee',
+          password: 'password123'
+        });
+
+      employeeToken = employeeLoginResponse.body.token;
+
+      // Run payroll first if not already processed
+      if (!payrollProcessed) {
+        await request(app)
+          .post('/payrolls/run')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            attendancePeriodId: attendancePeriodId
+          });
+        payrollProcessed = true;
+      }
+    });
+
+    it('should get employee payslip successfully with valid token', async () => {
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/payslip/${attendancePeriodId}`)
+        .set('Authorization', `Bearer ${employeeToken}`);
+
+      // Assert
+      expect(response.status).toBe(200);
+      
+      const data = response.body.data;
+      expect(data.payslipInfo).toBeDefined();
+
+      // Check payslip info
+      expect(data.payslipInfo).toBeDefined();
+      expect(data.payslipInfo.payslipNumber).toBeDefined();
+      expect(data.payslipInfo.employeeName).toBe('Payroll Employee');
+      expect(data.payslipInfo.periodName).toBe('Test Payroll Period');
+      expect(data.payslipInfo.periodStartDate).toBe('2025-06-01');
+      expect(data.payslipInfo.periodEndDate).toBe('2025-06-30');
+
+      // Check salary breakdown
+      expect(data.salaryBreakdown).toBeDefined();
+      expect(data.salaryBreakdown.basicSalary).toBe(5000000);
+      expect(data.salaryBreakdown.totalWorkingDays).toBeDefined();
+      expect(data.salaryBreakdown.daysWorked).toBeDefined();
+      expect(data.salaryBreakdown.grossSalary).toBeDefined();
+      expect(data.salaryBreakdown.deductions).toBe(0);
+      expect(data.salaryBreakdown.netSalary).toBeDefined();
+
+      // Check attendance breakdown
+      expect(data.attendanceBreakdown).toBeDefined();
+      expect(data.attendanceBreakdown.summary).toBeDefined();
+      expect(data.attendanceBreakdown.impact).toBeDefined();
+
+      // Check overtime breakdown
+      expect(data.overtimeBreakdown).toBeDefined();
+      expect(data.overtimeBreakdown.summary).toBeDefined();
+      expect(data.overtimeBreakdown.details).toEqual([]);
+
+      // Check reimbursement breakdown
+      expect(data.reimbursementBreakdown).toBeDefined();
+      expect(data.reimbursementBreakdown.summary).toBeDefined();
+      expect(data.reimbursementBreakdown.details).toEqual([]);
+
+      // Check total take home
+      expect(data.totalTakeHome).toBeDefined();
+      expect(typeof data.totalTakeHome).toBe('number');
+
+      // Check calculation breakdown
+      expect(data.calculation).toBeDefined();
+      expect(data.calculation.grossSalary).toBeDefined();
+      expect(data.calculation.overtimePay).toBe(0);
+      expect(data.calculation.reimbursements).toBe(0);
+      expect(data.calculation.deductions).toBe(0);
+      expect(data.calculation.totalTakeHome).toBeDefined();
+    });
+
+    it('should return 401 without auth token', async () => {
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/payslip/${attendancePeriodId}`);
+
+      // Assert
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 401 with invalid auth token', async () => {
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/payslip/${attendancePeriodId}`)
+        .set('Authorization', 'Bearer invalid_token');
+
+      // Assert
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent attendance period', async () => {
+      // Act
+      const response = await request(app)
+        .get('/payrolls/payslip/123e4567-e89b-12d3-a456-426614174000')
+        .set('Authorization', `Bearer ${employeeToken}`);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('not been processed');
+    });
+
+    it('should return 400 for attendance period without processed payroll', async () => {
+      // Create a new attendance period without running payroll
+      const newPeriodData = {
+        name: 'Unprocessed Period',
+        startDate: '2025-07-01',
+        endDate: '2025-07-31'
+      };
+
+      const newPeriodResponse = await request(app)
+        .post('/attendance-periods')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(newPeriodData);
+
+      const newPeriodId = newPeriodResponse.body.attendancePeriod.id;
+
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/payslip/${newPeriodId}`)
+        .set('Authorization', `Bearer ${employeeToken}`);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('not been processed');
+    });
+
+    it('should return 400 when employee has no payslip for the period', async () => {
+      // Create another employee without attendance/payslip
+      const anotherEmployeeData = {
+        username: 'anotheremployee',
+        passwordHash: await bcrypt.hash('password123', 10),
+        name: 'Another Employee',
+        role: 'employee',
+        isActive: true,
+        baseSalary: 5000000,
+      };
+      
+      await TestHelpers.createTestUser(anotherEmployeeData);
+
+      // Login as the new employee
+      const anotherEmployeeLoginResponse = await request(app)
+        .post('/users/login')
+        .send({
+          username: 'anotheremployee',
+          password: 'password123'
+        });
+
+      const anotherEmployeeToken = anotherEmployeeLoginResponse.body.token;
+
+      // Act - Try to get payslip for employee who has no attendance/payslip
+      const response = await request(app)
+        .get(`/payrolls/payslip/${attendancePeriodId}`)
+        .set('Authorization', `Bearer ${anotherEmployeeToken}`);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('not been processed');
     });
   });
 }); 

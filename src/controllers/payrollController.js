@@ -153,7 +153,7 @@ const getEmployeePayslip = async (req, res) => {
       });
     }
 
-    if (error.message.includes('not processed')) {
+    if (error.message.includes('not been processed')) {
       return res.status(400).json({
         error: error.message
       });

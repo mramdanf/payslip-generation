@@ -23,6 +23,10 @@ class TestHelpers {
     return await db.User.create(defaultUser);
   }
 
+  static async getUserByUsername(username) {
+    return await db.User.findOne({ where: { username } });
+  }
+
   /**
    * Create an admin user
    */
