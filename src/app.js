@@ -13,8 +13,6 @@ const reimbursementRouter = require('./routes/reimbursementRoutes');
 const payrollRouter = require('./routes/payrollRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 
 // Security middleware
 app.use(helmet());
@@ -82,24 +80,31 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
+// Function to start the server
 const startServer = async () => {
+  const PORT = process.env.PORT || 3000;
+  
   try {
     // Test database connection
     await db.sequelize.authenticate();
     console.log('Database connection established successfully.');
     
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
       console.log(`DB test: http://localhost:${PORT}/db-test`);
     });
+    
+    return server;
   } catch (error) {
     console.error('Unable to start server:', error);
     process.exit(1);
   }
 };
 
-startServer();
+// Only start server if this file is run directly (not imported)
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
