@@ -128,16 +128,5 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  // Instance methods
-  User.prototype.validatePassword = async function(password) {
-    return bcrypt.compare(password, this.passwordHash);
-  };
-
-  User.prototype.toJSON = function() {
-    const values = { ...this.get() };
-    delete values.passwordHash;
-    return values;
-  };
-
   return User;
 }; 

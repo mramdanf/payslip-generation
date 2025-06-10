@@ -36,13 +36,6 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     /**
-     * Check if reimbursement can be modified (not locked)
-     */
-    canBeModified() {
-      return !this.is_locked;
-    }
-
-    /**
      * Format amount for display
      */
     getFormattedAmount() {
@@ -125,12 +118,12 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     hooks: {
-      beforeUpdate: async (reimbursement, options) => {
+      beforeUpdate: async (reimbursement) => {
         if (reimbursement.is_locked && reimbursement.changed('is_locked') === false) {
           throw new Error('Cannot modify locked reimbursement record');
         }
       },
-      beforeDestroy: async (reimbursement, options) => {
+      beforeDestroy: async (reimbursement) => {
         if (reimbursement.is_locked) {
           throw new Error('Cannot delete locked reimbursement record');
         }

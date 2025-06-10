@@ -119,21 +119,5 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  // Instance methods
-  Attendance.prototype.getHoursWorked = function() {
-    if (!this.checkIn || !this.checkOut) {
-      return 0;
-    }
-    
-    const checkIn = new Date(`1970-01-01T${this.checkIn}`);
-    const checkOut = new Date(`1970-01-01T${this.checkOut}`);
-    
-    return Math.max(0, (checkOut - checkIn) / (1000 * 60 * 60));
-  };
-
-  Attendance.prototype.isFullDay = function() {
-    return this.status === 'present' || this.status === 'late';
-  };
-
   return Attendance;
 }; 

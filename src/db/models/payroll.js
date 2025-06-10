@@ -86,32 +86,6 @@ module.exports = (sequelize, DataTypes) => {
       as: 'updater'
     });
 
-    // Note: Payslips are linked through attendance period, not directly to payroll
-  };
-
-  // Instance methods
-  Payroll.prototype.getPayrollSummary = async function() {
-    const payslips = await sequelize.models.Payslip.findAll({
-      where: { attendancePeriodId: this.attendancePeriodId },
-      include: [{
-        model: sequelize.models.User,
-        as: 'employee',
-        attributes: ['id', 'name', 'username']
-      }]
-    });
-
-    return {
-      payrollId: this.id,
-      attendancePeriodId: this.attendancePeriodId,
-      processedAt: this.processedAt,
-      totalEmployees: this.totalEmployees,
-      totalAmount: this.totalAmount,
-      payslips: payslips.map(payslip => ({
-        employeeId: payslip.employeeId,
-        employeeName: payslip.employee?.name,
-        takeHomePay: payslip.totalTakeHome
-      }))
-    };
   };
 
   return Payroll;

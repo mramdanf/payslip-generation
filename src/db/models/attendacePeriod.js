@@ -118,22 +118,5 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  // Instance methods
-  AttendancePeriod.prototype.getTotalWorkingDays = function() {
-    const start = new Date(this.startDate);
-    const end = new Date(this.endDate);
-    let workingDays = 0;
-    
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dayOfWeek = date.getDay();
-      // Exclude weekends (Saturday = 6, Sunday = 0)
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
-      }
-    }
-    
-    return workingDays;
-  };
-
   return AttendancePeriod;
 }; 

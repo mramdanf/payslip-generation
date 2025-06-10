@@ -229,17 +229,5 @@ module.exports = (sequelize, DataTypes) => {
     return `PAY-${empId}-${perId}-${timestamp}`;
   };
 
-  // Instance methods
-  Payslip.prototype.calculateSalary = function() {
-    const dailySalary = this.basicSalary / this.totalWorkingDays;
-    this.grossSalary = dailySalary * this.daysWorked;
-    this.netSalary = this.grossSalary - this.deductions;
-    return this;
-  };
-
-  Payslip.prototype.getAttendancePercentage = function() {
-    return (this.daysWorked / this.totalWorkingDays) * 100;
-  };
-
   return Payslip;
 }; 

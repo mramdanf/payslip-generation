@@ -112,12 +112,12 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     hooks: {
-      beforeUpdate: async (overtime, options) => {
+      beforeUpdate: async (overtime) => {
         if (overtime.is_locked && overtime.changed('is_locked') === false) {
           throw new Error('Cannot modify locked overtime record');
         }
       },
-      beforeDestroy: async (overtime, options) => {
+      beforeDestroy: async (overtime) => {
         if (overtime.is_locked) {
           throw new Error('Cannot delete locked overtime record');
         }
