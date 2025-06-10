@@ -42,7 +42,10 @@ async function createOvertime(req, res) {
     });
 
     res.status(201).json(endpointSuccessResponse({ 
-      overtime,
+      overtime: {
+        ...overtime.toJSON(),
+        hours: parseFloat(overtime.hours)
+      },
       message: 'Overtime submitted successfully'
     }));
   } catch (error) {
