@@ -9,6 +9,7 @@ const userRouter = require('./routes/userRoutes');
 const attendancePeriodRouter = require('./routes/attendancePeriodRoutes');
 const attendanceRouter = require('./routes/attendanceRoutes');
 const overtimeRouter = require('./routes/overtimeRoutes');
+const reimbursementRouter = require('./routes/reimbursementRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use('/users', userRouter);
 app.use('/attendance-periods', attendancePeriodRouter);
 app.use('/attendances', attendanceRouter);
 app.use('/overtimes', overtimeRouter);
+app.use('/reimbursements', reimbursementRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
