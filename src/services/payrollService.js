@@ -317,11 +317,6 @@ class PayrollService {
   // Get summary of all employee payslips for an attendance period (admin only)
   static async getPayslipSummary(attendancePeriodId, requestedBy) {
     try {
-      // Verify the requester is an admin
-      const requester = await User.findByPk(requestedBy);
-      if (!requester || requester.role !== 'admin') {
-        throw new Error('Unauthorized: Only admin users can access payslip summary');
-      }
 
       // Check if payroll has been processed for this period
       const payroll = await Payroll.findOne({

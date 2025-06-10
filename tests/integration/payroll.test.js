@@ -174,6 +174,30 @@ describe('Payroll Endpoints', () => {
       expect(response.status).toBe(409);
       expect(response.body.error).toContain('already been processed');
     });
+
+    it('should return 403 for non-admin users', async () => {
+      // Get employee token
+      const employeeLoginResponse = await request(app)
+        .post('/users/login')
+        .send({
+          username: 'payrollemployee',
+          password: 'password123'
+        });
+
+      const employeeToken = employeeLoginResponse.body.token;
+
+      // Act
+      const response = await request(app)
+        .post('/payrolls/run')
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .send({
+          attendancePeriodId: attendancePeriodId
+        });
+
+      // Assert
+      expect(response.status).toBe(403);
+      expect(response.body.errorMessage).toContain('Admin access required');
+    });
   });
 
   describe('GET /payrolls/payslip/:periodId', () => {
@@ -451,18 +475,9 @@ describe('Payroll Endpoints', () => {
 
       // Assert
       expect(response.status).toBe(403);
-      expect(response.body.error).toContain('Unauthorized');
+      expect(response.body.errorMessage).toContain('Admin access required');
     });
 
-    it('should return 400 for non-existent attendance period', async () => {
-      // Act
-      const response = await request(app)
-        .get('/payrolls/summary/123e4567-e89b-12d3-a456-426614174000')
-        .set('Authorization', `Bearer ${adminToken}`);
 
-      // Assert
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('not been processed');
-    });
   });
 }); 

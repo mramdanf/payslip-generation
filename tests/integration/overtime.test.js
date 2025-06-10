@@ -5,11 +5,24 @@ const bcrypt = require('bcrypt');
 
 describe('Overtime Endpoints', () => {
   let authToken;
+  let adminToken;
   let testUserId;
   let attendancePeriodId;
 
   beforeEach(async () => {
-    // Create a test user and get auth token
+    // Create an admin user for attendance period creation
+    const adminUserData = {
+      username: 'overtimeadmin',
+      passwordHash: await bcrypt.hash('password123', 10),
+      name: 'Overtime Admin',
+      role: 'admin',
+      isActive: true,
+      baseSalary: 10000000,
+    };
+    
+    await TestHelpers.createTestUser(adminUserData);
+
+    // Create a test employee user
     const userData = {
       username: 'overtimeuser',
       passwordHash: await bcrypt.hash('password123', 10),
@@ -22,7 +35,17 @@ describe('Overtime Endpoints', () => {
     const user = await TestHelpers.createTestUser(userData);
     testUserId = user.id;
 
-    // Login to get token
+    // Login as admin to create attendance period
+    const adminLoginResponse = await request(app)
+      .post('/users/login')
+      .send({
+        username: 'overtimeadmin',
+        password: 'password123'
+      });
+
+    adminToken = adminLoginResponse.body.token;
+
+    // Login as employee to get token for overtime tests
     const loginResponse = await request(app)
       .post('/users/login')
       .send({
@@ -32,7 +55,7 @@ describe('Overtime Endpoints', () => {
 
     authToken = loginResponse.body.token;
 
-    // Create an attendance period for testing
+    // Create an attendance period for testing (requires admin)
     const attendancePeriodData = {
       name: 'Test Overtime Period',
       startDate: '2025-06-01',
@@ -41,7 +64,7 @@ describe('Overtime Endpoints', () => {
 
     const periodResponse = await request(app)
       .post('/attendance-periods')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send(attendancePeriodData);
 
     attendancePeriodId = periodResponse.body.attendancePeriod.id;

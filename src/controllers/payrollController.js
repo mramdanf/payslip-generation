@@ -132,11 +132,7 @@ const getPayslipSummary = async (req, res) => {
       });
     }
 
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({
-        error: error.message
-      });
-    }
+
 
     res.status(500).json({
       error: 'Internal server error',
