@@ -114,6 +114,18 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'payrollProcessedBy',
       as: 'processedPeriods'
     });
+
+    // Overtime associations
+    User.hasMany(models.Overtime, {
+      foreignKey: 'user_id',
+      as: 'overtimeRecords'
+    });
+
+    // Reimbursement associations
+    User.hasMany(models.Reimbursement, {
+      foreignKey: 'user_id',
+      as: 'reimbursementRecords'
+    });
   };
 
   // Instance methods

@@ -102,7 +102,7 @@ module.exports = (sequelize, DataTypes) => {
       field: 'updated_by'
     }
   }, {
-    tableName: 'payslips',
+    tableName: 'payslip',
     timestamps: true,
     underscored: true,
     indexes: [
