@@ -53,73 +53,6 @@ const runPayroll = async (req, res) => {
   }
 };
 
-// Get payroll details by ID
-const getPayrollById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const payroll = await Payroll.findByPk(id, {
-      include: [
-        {
-          model: AttendancePeriod,
-          as: 'attendancePeriod'
-        }
-      ]
-    });
-
-    if (!payroll) {
-      return res.status(404).json({
-        error: 'Payroll not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: payroll
-    });
-  } catch (error) {
-    console.error('Error fetching payroll:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch payroll'
-    });
-  }
-};
-
-// Get payroll by attendance period ID
-const getPayrollByPeriod = async (req, res) => {
-  try {
-    const { periodId } = req.params;
-
-    const payroll = await Payroll.findOne({
-      where: { attendancePeriodId: periodId },
-      include: [
-        {
-          model: AttendancePeriod,
-          as: 'attendancePeriod'
-        }
-      ]
-    });
-
-    if (!payroll) {
-      return res.status(404).json({
-        error: 'Payroll not found for this attendance period'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: payroll
-    });
-  } catch (error) {
-    console.error('Error fetching payroll by period:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch payroll'
-    });
-  }
-};
-
 // Get employee payslip for a specific attendance period
 const getEmployeePayslip = async (req, res) => {
   try {
@@ -214,8 +147,6 @@ const getPayslipSummary = async (req, res) => {
 
 module.exports = {
   runPayroll,
-  getPayrollById,
-  getPayrollByPeriod,
   getEmployeePayslip,
   getPayslipSummary
 }; 
