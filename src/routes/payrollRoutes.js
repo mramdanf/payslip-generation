@@ -13,4 +13,7 @@ router.get('/:id', verifyTokenMiddleware, payrollController.getPayrollById);
 // GET /payroll/period/:periodId - Get payroll by attendance period
 router.get('/period/:periodId', verifyTokenMiddleware, payrollController.getPayrollByPeriod);
 
+// GET /payroll/payslip/:periodId - Get employee payslip for a specific attendance period
+router.get('/payslip/:periodId', verifyTokenMiddleware, payrollController.getEmployeePayslip);
+
 module.exports = router; 

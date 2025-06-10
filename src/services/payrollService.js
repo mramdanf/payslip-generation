@@ -221,6 +221,98 @@ class PayrollService {
     const perId = periodId.slice(-4);
     return `PAY-${empId}-${perId}-${timestamp}`;
   }
+
+  // Get employee payslip for a specific attendance period
+  static async getEmployeePayslip(employeeId, attendancePeriodId) {
+    try {
+      // First check if payroll has been processed for this period
+      const payroll = await Payroll.findOne({
+        where: { attendancePeriodId }
+      });
+
+      if (!payroll) {
+        throw new Error('Payroll has not been processed for this attendance period yet');
+      }
+
+      // Get the payslip with all necessary associations
+      const payslip = await Payslip.findOne({
+        where: {
+          employeeId,
+          attendancePeriodId
+        },
+        include: [
+          {
+            model: User,
+            as: 'employee',
+            attributes: ['id', 'name', 'monthlySalary']
+          },
+          {
+            model: AttendancePeriod,
+            as: 'attendancePeriod',
+            attributes: ['id', 'name', 'startDate', 'endDate']
+          }
+        ]
+      });
+
+      if (!payslip) {
+        throw new Error('Payslip not found for this employee and attendance period');
+      }
+
+      // Format the response according to the requirements
+      return {
+        payslipInfo: {
+          payslipNumber: payslip.payslipNumber,
+          employeeName: payslip.employee.name,
+          periodName: payslip.attendancePeriod.name,
+          periodStartDate: payslip.attendancePeriod.startDate,
+          periodEndDate: payslip.attendancePeriod.endDate,
+          generatedAt: payslip.generatedAt || payslip.createdAt
+        },
+        salaryBreakdown: {
+          basicSalary: parseFloat(payslip.basicSalary),
+          totalWorkingDays: payslip.totalWorkingDays,
+          daysWorked: payslip.daysWorked,
+          grossSalary: parseFloat(payslip.grossSalary),
+          deductions: parseFloat(payslip.deductions),
+          netSalary: parseFloat(payslip.netSalary)
+        },
+        attendanceBreakdown: {
+          summary: payslip.attendanceBreakdown,
+          impact: {
+            dailySalary: parseFloat(payslip.basicSalary) / payslip.totalWorkingDays,
+            effectiveWorkingDays: payslip.daysWorked,
+            salaryFromAttendance: parseFloat(payslip.grossSalary)
+          }
+        },
+        overtimeBreakdown: {
+          summary: {
+            totalHours: parseFloat(payslip.totalOvertimeHours),
+            hourlySalary: (parseFloat(payslip.basicSalary) / payslip.totalWorkingDays) / 8,
+            overtimeMultiplier: 2,
+            totalOvertimePay: parseFloat(payslip.overtimePay)
+          },
+          details: payslip.overtimeBreakdown || []
+        },
+        reimbursementBreakdown: {
+          summary: {
+            totalAmount: parseFloat(payslip.totalReimbursements),
+            totalCount: (payslip.reimbursementBreakdown || []).length
+          },
+          details: payslip.reimbursementBreakdown || []
+        },
+        totalTakeHome: parseFloat(payslip.totalTakeHome),
+        calculation: {
+          grossSalary: parseFloat(payslip.grossSalary),
+          overtimePay: parseFloat(payslip.overtimePay),
+          reimbursements: parseFloat(payslip.totalReimbursements),
+          deductions: parseFloat(payslip.deductions),
+          totalTakeHome: parseFloat(payslip.totalTakeHome)
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 module.exports = PayrollService; 

@@ -23,6 +23,8 @@ async function verifyToken(req, res, next) {
     );
     req.id = decoded.id;
 
+    console.log('id', req.id);
+
     const user = await findById(req.id);
     if (!user) {
       return res.status(401).json(endpointErrorResponse('Invalid token'));
@@ -30,7 +32,9 @@ async function verifyToken(req, res, next) {
 
     return next();
   } catch (error) {
-    return res.status(401).json({ error: true, errorMessage: 'Invalid token' });
+    console.log('error', error);
+    
+    return res.status(401).json({ errorMessage: 'Invalid token' });
   }
 }
 
