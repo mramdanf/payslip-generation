@@ -348,4 +348,121 @@ describe('Payroll Endpoints', () => {
       expect(response.body.error).toContain('not been processed');
     });
   });
+
+  describe('GET /payrolls/summary/:periodId', () => {
+    let payrollProcessed = false;
+
+    beforeEach(async () => {
+      // Run payroll first if not already processed
+      if (!payrollProcessed) {
+        await request(app)
+          .post('/payrolls/run')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            attendancePeriodId: attendancePeriodId
+          });
+        payrollProcessed = true;
+      }
+    });
+
+    it('should get payroll summary successfully for admin', async () => {
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/summary/${attendancePeriodId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+
+      const data = response.body.data;
+      
+      // Check period info
+      expect(data.periodInfo).toBeDefined();
+      expect(data.periodInfo.periodId).toBe(attendancePeriodId);
+      expect(data.periodInfo.periodName).toBe('Test Payroll Period');
+      expect(data.periodInfo.startDate).toBe('2025-06-01');
+      expect(data.periodInfo.endDate).toBe('2025-06-30');
+      expect(data.periodInfo.processedAt).toBeDefined();
+      expect(data.periodInfo.processedBy).toBe(adminUserId);
+
+      // Check summary
+      expect(data.summary).toBeDefined();
+      expect(data.summary.totalEmployees).toBe(1); // We have 1 employee in test
+      expect(data.summary.totalTakeHomePay).toBeDefined();
+      expect(typeof data.summary.totalTakeHomePay).toBe('number');
+      expect(data.summary.averageTakeHomePay).toBeDefined();
+      expect(data.summary.totalGrossSalary).toBeDefined();
+      expect(data.summary.totalOvertimePay).toBe(0);
+      expect(data.summary.totalReimbursements).toBe(0);
+      expect(data.summary.totalDeductions).toBe(0);
+
+      // Check employees array
+      expect(data.employees).toBeDefined();
+      expect(Array.isArray(data.employees)).toBe(true);
+      expect(data.employees.length).toBe(1);
+      
+      const employee = data.employees[0];
+      expect(employee.employeeId).toBe(employeeUser.id);
+      expect(employee.employeeName).toBe('Payroll Employee');
+      expect(employee.takeHomePay).toBeDefined();
+      expect(typeof employee.takeHomePay).toBe('number');
+      expect(employee.grossSalary).toBeDefined();
+      expect(employee.overtimePay).toBe(0);
+      expect(employee.reimbursements).toBe(0);
+      expect(employee.deductions).toBe(0);
+    });
+
+    it('should return 401 without auth token', async () => {
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/summary/${attendancePeriodId}`);
+
+      // Assert
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 401 with invalid auth token', async () => {
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/summary/${attendancePeriodId}`)
+        .set('Authorization', 'Bearer invalid_token');
+
+      // Assert
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 403 for non-admin users', async () => {
+      // Get employee token
+      const employeeLoginResponse = await request(app)
+        .post('/users/login')
+        .send({
+          username: 'payrollemployee',
+          password: 'password123'
+        });
+
+      const employeeToken = employeeLoginResponse.body.token;
+
+      // Act
+      const response = await request(app)
+        .get(`/payrolls/summary/${attendancePeriodId}`)
+        .set('Authorization', `Bearer ${employeeToken}`);
+
+      // Assert
+      expect(response.status).toBe(403);
+      expect(response.body.error).toContain('Unauthorized');
+    });
+
+    it('should return 400 for non-existent attendance period', async () => {
+      // Act
+      const response = await request(app)
+        .get('/payrolls/summary/123e4567-e89b-12d3-a456-426614174000')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('not been processed');
+    });
+  });
 }); 
