@@ -16,4 +16,7 @@ router.get('/period/:periodId', verifyTokenMiddleware, payrollController.getPayr
 // GET /payroll/payslip/:periodId - Get employee payslip for a specific attendance period
 router.get('/payslip/:periodId', verifyTokenMiddleware, payrollController.getEmployeePayslip);
 
+// GET /payroll/summary/:periodId - Get summary of all employee payslips for an attendance period (admin only)
+router.get('/summary/:periodId', verifyTokenMiddleware, payrollController.getPayslipSummary);
+
 module.exports = router; 

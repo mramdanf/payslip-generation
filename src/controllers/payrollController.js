@@ -166,9 +166,56 @@ const getEmployeePayslip = async (req, res) => {
   }
 };
 
+// Get summary of all employee payslips for an attendance period (admin only)
+const getPayslipSummary = async (req, res) => {
+  try {
+    const { periodId } = req.params;
+    const requestedBy = req.id; // From JWT token
+
+    if (!periodId) {
+      return res.status(400).json({
+        error: 'Attendance period ID is required'
+      });
+    }
+
+    const summary = await PayrollService.getPayslipSummary(periodId, requestedBy);
+
+    res.json({
+      success: true,
+      data: summary
+    });
+  } catch (error) {
+    console.error('Error fetching payslip summary:', error);
+    
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        error: error.message
+      });
+    }
+
+    if (error.message.includes('not processed')) {
+      return res.status(400).json({
+        error: error.message
+      });
+    }
+
+    if (error.message.includes('Unauthorized')) {
+      return res.status(403).json({
+        error: error.message
+      });
+    }
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch payslip summary'
+    });
+  }
+};
+
 module.exports = {
   runPayroll,
   getPayrollById,
   getPayrollByPeriod,
-  getEmployeePayslip
+  getEmployeePayslip,
+  getPayslipSummary
 }; 

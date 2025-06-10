@@ -313,6 +313,85 @@ class PayrollService {
       throw error;
     }
   }
+
+  // Get summary of all employee payslips for an attendance period (admin only)
+  static async getPayslipSummary(attendancePeriodId, requestedBy) {
+    try {
+      // Verify the requester is an admin
+      const requester = await User.findByPk(requestedBy);
+      if (!requester || requester.role !== 'admin') {
+        throw new Error('Unauthorized: Only admin users can access payslip summary');
+      }
+
+      // Check if payroll has been processed for this period
+      const payroll = await Payroll.findOne({
+        where: { attendancePeriodId },
+        include: [
+          {
+            model: AttendancePeriod,
+            as: 'attendancePeriod',
+            attributes: ['id', 'name', 'startDate', 'endDate']
+          }
+        ]
+      });
+
+      if (!payroll) {
+        throw new Error('Payroll has not been processed for this attendance period yet');
+      }
+
+      // Get all payslips for this period
+      const payslips = await Payslip.findAll({
+        where: { attendancePeriodId },
+        include: [
+          {
+            model: User,
+            as: 'employee',
+            attributes: ['id', 'name']
+          }
+        ],
+        order: [['employee', 'name', 'ASC']]
+      });
+
+      // Calculate summary
+      const totalTakeHomePay = payslips.reduce((sum, payslip) => 
+        sum + parseFloat(payslip.totalTakeHome), 0
+      );
+
+      const employeeSummary = payslips.map(payslip => ({
+        employeeId: payslip.employee.id,
+        employeeName: payslip.employee.name,
+        employeeEmail: payslip.employee.email,
+        takeHomePay: parseFloat(payslip.totalTakeHome),
+        grossSalary: parseFloat(payslip.grossSalary),
+        overtimePay: parseFloat(payslip.overtimePay),
+        reimbursements: parseFloat(payslip.totalReimbursements),
+        deductions: parseFloat(payslip.deductions)
+      }));
+
+      return {
+        periodInfo: {
+          periodId: payroll.attendancePeriod.id,
+          periodName: payroll.attendancePeriod.name,
+          startDate: payroll.attendancePeriod.startDate,
+          endDate: payroll.attendancePeriod.endDate,
+          processedAt: payroll.processedAt,
+          processedBy: payroll.processedBy
+        },
+        summary: {
+          totalEmployees: payslips.length,
+          totalTakeHomePay,
+          averageTakeHomePay: totalTakeHomePay / payslips.length,
+          totalGrossSalary: payslips.reduce((sum, p) => sum + parseFloat(p.grossSalary), 0),
+          totalOvertimePay: payslips.reduce((sum, p) => sum + parseFloat(p.overtimePay), 0),
+          totalReimbursements: payslips.reduce((sum, p) => sum + parseFloat(p.totalReimbursements), 0),
+          totalDeductions: payslips.reduce((sum, p) => sum + parseFloat(p.deductions), 0)
+        },
+        employees: employeeSummary
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 module.exports = PayrollService; 
